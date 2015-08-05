@@ -1,5 +1,7 @@
 package com.microsoft.stocksearch.ranking.service;
 
+import java.util.List;
+
 /**
  * interface of segmentation
  * @author v-junjzh
@@ -12,6 +14,6 @@ public abstract class SegmentService {
 	 * @param data query string
 	 * @return understandable segments
 	 */
-	abstract public String[] segment(String data);
+	abstract public List<String> segment(String data);
 	
 }

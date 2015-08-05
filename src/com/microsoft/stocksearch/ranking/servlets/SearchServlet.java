@@ -1,13 +1,18 @@
 package com.microsoft.stocksearch.ranking.servlets;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.microsoft.stocksearch.ranking.service.CorrectService;
+import com.microsoft.stocksearch.ranking.service.Dictionary;
 import com.microsoft.stocksearch.ranking.service.SegmentService;
+import com.microsoft.stocksearch.ranking.service.impl.CorrectServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
 
 /**
@@ -30,11 +35,13 @@ public class SearchServlet extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("content-type", "text/html;charset=UTF-8");
 		
-		response.getWriter().append("Served at: ").append(request.getContextPath()).append("<br/>");
 		
 		// TODO 
 		
 		String queryString = request.getParameter("s");
+		
+		String add = request.getParameter("add");
+		
 		
 		if (queryString == null) {
 			response.getWriter().append("<br/>Query string(parameter: s) is null");
@@ -45,13 +52,46 @@ public class SearchServlet extends HttpServlet {
 		
 		
 		SegmentService ss = new SegmentServiceImpl();
-		String[] segments = ss.segment(queryString);
-		
+		List<String> segments = ss.segment(queryString);
+		CorrectService correct=new CorrectServiceImpl();
+		segments=correct.correct(queryString,segments);
 		response.getWriter().append("<br/>Query string: " + queryString + "<br/>After segment:<br/>");
 		
 		for (String word : segments) {
 			response.getWriter().append(word).append("<br/>");
 		}
+		
+		response.getWriter().append("<br/>");
+		
+		Dictionary dic = new Dictionary();
+		
+		try {
+			dic.init();
+			
+			if(add != null) {
+				add = new String(add.getBytes("ISO8859-1"), "UTF-8");
+				dic.add(add);
+			}
+			
+			String del = request.getParameter("del");
+			if (del != null) {
+				del = new String(del.getBytes("ISO8859-1"), "UTF-8");
+				dic.delete(del);
+			}
+			
+			List<String> ws = dic.getDictionary();
+			for (String s : ws) {
+				response.getWriter().append(s).append("<br/>");
+			}
+			
+			dic.close();
+			
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			response.getWriter().append("<br/>" + e.getMessage());
+		}
+		
 		
 	}
 
