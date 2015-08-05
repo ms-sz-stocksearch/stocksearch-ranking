@@ -9,10 +9,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.microsoft.stocksearch.ranking.beans.QueryResult;
 import com.microsoft.stocksearch.ranking.service.CorrectService;
+import com.microsoft.stocksearch.ranking.service.DataService;
 import com.microsoft.stocksearch.ranking.service.Dictionary;
+import com.microsoft.stocksearch.ranking.service.RankService;
 import com.microsoft.stocksearch.ranking.service.SegmentService;
 import com.microsoft.stocksearch.ranking.service.impl.CorrectServiceImpl;
+import com.microsoft.stocksearch.ranking.service.impl.RankServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
 
 /**
@@ -38,6 +42,22 @@ public class SearchServlet extends HttpServlet {
 		
 		// TODO 
 		
+		
+		DataService das = new DataService();
+		try {
+			das.connect();
+			List<QueryResult> list = das.getData();
+			das.close();
+			
+			for (QueryResult q : list) {
+				//response.getWriter().append(q.getTitle()).append("<br/>");
+			}
+			
+		} catch (ClassNotFoundException | SQLException e1) {
+			e1.printStackTrace();
+		}
+		
+		
 		String queryString = request.getParameter("s");
 		
 		String add = request.getParameter("add");
@@ -53,8 +73,7 @@ public class SearchServlet extends HttpServlet {
 		
 		SegmentService ss = new SegmentServiceImpl();
 		List<String> segments = ss.segment(queryString);
-		CorrectService correct=new CorrectServiceImpl();
-		segments=correct.correct(queryString,segments);
+		
 		response.getWriter().append("<br/>Query string: " + queryString + "<br/>After segment:<br/>");
 		
 		for (String word : segments) {
@@ -62,6 +81,35 @@ public class SearchServlet extends HttpServlet {
 		}
 		
 		response.getWriter().append("<br/>");
+		
+		
+		CorrectService correct=new CorrectServiceImpl();
+		segments=correct.correct(queryString,segments);
+		
+		response.getWriter().append("<br/>Query string: " + queryString + "<br/>After correct:<br/>");
+		for (String word : segments) {
+			response.getWriter().append(word).append("<br/>");
+		}
+		
+		response.getWriter().append("<br/>");
+		
+		response.getWriter().append("Result :<br/>");
+		
+		
+		RankService rs = new RankServiceImpl();
+		List<QueryResult> qr = rs.sort(segments);
+		
+		for (QueryResult q : qr) {
+			response.getWriter().append("<a href=\"" + q.getUrl() + "\">" + q.getTitle() + "</P>");
+		}
+		
+		/*
+		for (String word : segments) {
+			response.getWriter().append(word).append("<br/>");
+		}
+		
+		response.getWriter().append("<br/>");
+		
 		
 		Dictionary dic = new Dictionary();
 		
@@ -91,6 +139,7 @@ public class SearchServlet extends HttpServlet {
 			e.printStackTrace();
 			response.getWriter().append("<br/>" + e.getMessage());
 		}
+		*/
 		
 		
 	}
