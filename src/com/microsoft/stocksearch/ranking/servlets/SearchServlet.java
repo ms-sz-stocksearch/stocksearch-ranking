@@ -19,6 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.microsoft.stocksearch.ranking.service.SegmentService;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 /**
  * Servlet implementation class SearchServlet
  */
@@ -40,9 +43,6 @@ public class SearchServlet extends HttpServlet {
     	dictionary = new ArrayList<String>();
 		try {
 			InputStream conf = getClass().getResourceAsStream("/dictionary.conf");
-			if(conf == null) {
-				System.out.println("+++++++++");
-			}
 			BufferedReader confrd = new BufferedReader(new InputStreamReader(conf, "utf-8"));
 			String dir = confrd.readLine();
 			confrd.close();
@@ -82,10 +82,12 @@ public class SearchServlet extends HttpServlet {
 		
 		String queryString = request.getParameter("s");
 		
-		
+		JSONObject res = new JSONObject();
 		
 		if (queryString == null) {
-			response.getWriter().append("<br/>Query string(parameter: s) is null");
+			res.put("status", 300);
+			res.put("msg", "parameter s is null");
+			response.getWriter().append(res.toString());
 			return ;
 		}
 		
@@ -98,14 +100,31 @@ public class SearchServlet extends HttpServlet {
 		
 		List<String> segments = ss.segment(queryString);
 		
-		response.getWriter().append("<br/>dictionary size: " + dictionary.size() + "<br/>");
-		response.getWriter().append("<br/>Query string: " + queryString + "<br/>After segment:<br/>");
 		
-		for (String word : segments) {
-			response.getWriter().append(word).append("<br/>");
-		}
 		
 		response.getWriter().append("<br/>");
+		
+		res.put("status", 200);
+		res.put("msg", "ok");
+		
+		res.put("query", queryString);
+		JSONArray segs = new JSONArray();
+		
+		for (String word : segments) {
+			JSONObject wd = new JSONObject();
+			wd.put("word", word);
+			segs.add(wd);
+		}
+		
+		res.put("segments", segs);
+		
+		res.put("stock_code", "123");
+		
+		JSONArray result = new JSONArray();
+		
+		res.put("result", result);
+		
+		response.getWriter().append(res.toString());
 		
 		
 		/*
