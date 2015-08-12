@@ -9,7 +9,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -38,6 +42,9 @@ public class SearchServlet extends HttpServlet {
 	
 	private static CorrectService correctService = null;
 	private static RankService rankservice = null;
+	
+	private Map<String, String> stockmap;
+	private Set<String> stockids;
 	
        
     /**
@@ -123,11 +130,28 @@ public class SearchServlet extends HttpServlet {
 		
 		segments = correctService.correct(queryString, segments);
 		
-		String stockId = segments.get(segments.size()-1);
+		if (stockmap == null) {
+			initStockMap();
+		}
+		
+		String stockId = null;
+		
+		for (String s : segments) {
+			if(stockmap.containsKey(s)) {
+				stockId = stockmap.get(s);
+				break;
+			}
+			if(stockids.contains(s)) {
+				stockId = s;
+			}
+		}
 		
 		segments.remove(segments.size()-1);
 		
+		System.out.println("==+==+");
 		List<QueryResult> queryResult = rankservice.sort(segments);
+		System.out.println("call end");
+		//List<QueryResult> queryResult = new ArrayList<QueryResult>();
 		
 		//Set<String> ss = new HashSet<String>(segments);
 		//segments = new ArrayList(ss);
@@ -186,6 +210,44 @@ public class SearchServlet extends HttpServlet {
 		
 		*/
 		
+	}
+
+	private void initStockMap() {
+		stockmap = new HashMap();
+		stockids = new HashSet();
+		String FilePath = "C:\\Users\\v-junjzh\\ranking\\";
+		//String FilePath = "/home/ubuntu/stocksearch/ranking/ranking/";
+		String FileName = "stockid.txt";
+		String FullPath = FilePath + FileName;
+		try {
+			String encoding = "UTF-8";
+			File file = new File(FullPath);
+			if (file.isFile() && file.exists()) { // 判断文件是否存在
+				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
+				BufferedReader bufferedReader = new BufferedReader(read);
+				String lineTxt = null;
+				while ((lineTxt = bufferedReader.readLine()) != null) {// 按行读取
+					if (!"".equals(lineTxt)) {
+						String[] reds = lineTxt.split("\\s+");// 对行的内容进行分析处理后再放入map里。
+						//System.out.println("===>" + reds[0] + " : " + reds[1]);
+						String stock = reds[0];
+						// System.out.println(stock);
+						//int index = stock.length();
+						//String stockid = lineTxt.substring(index).trim();
+						String stockid = reds[1];
+						stockids.add(stockid);
+						stockmap.put(stock, stockid);// 放入map
+					}
+				}
+				read.close();// 关闭InputStreamReader
+				bufferedReader.close();// 关闭BufferedReader
+			} else {
+				System.out.println("cannot find file");
+			}
+		} catch (Exception e) {
+			System.out.println("read error");
+			e.printStackTrace();
+		}
 	}
 
 	/**

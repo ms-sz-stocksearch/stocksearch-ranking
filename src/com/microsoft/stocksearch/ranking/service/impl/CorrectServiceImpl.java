@@ -12,90 +12,84 @@ import com.microsoft.stocksearch.ranking.service.CorrectService;
 
 import java.util.HashMap;
 
-public class CorrectServiceImpl extends CorrectService{
-	public static Map<String,String> getDic(List<String> dic,Map<String,String> filemaps){
-		String FilePath="C:\\Users\\v-junjzh\\ranking\\";
-		String FileName="stockid.txt";
-		String FullPath=FilePath+FileName;
+public class CorrectServiceImpl extends CorrectService {
+	public static Map<String, String> getDic(List<String> dic, Map<String, String> filemaps) {
+		String FilePath = "C:\\Users\\v-junjzh\\ranking\\";
+		String FileName = "stockid.txt";
+		String FullPath = FilePath + FileName;
 		try {
-		String encoding ="UTF-8";
-		File file=new File(FullPath);
-		if (file.isFile() && file.exists()) { // 判断文件是否存在
-			InputStreamReader read = new InputStreamReader(
-			new FileInputStream(file), encoding);// 考虑到编码格式
-			BufferedReader bufferedReader = new BufferedReader(read);
-			String lineTxt = null;
-			while ((lineTxt = bufferedReader.readLine()) != null) {//按行读取
-			if(!"".equals(lineTxt))
-			{
-				String[] reds = lineTxt.split("\\s[0-9]{6}");//对行的内容进行分析处理后再放入map里。
-				String stock=reds[0];
-				//System.out.println(stock);
-				int index=stock.length();
-				String stockid=lineTxt.substring(index).trim();
-				dic.add(stock);
-				filemaps.put(stock, stockid);//放入map
+			String encoding = "UTF-8";
+			File file = new File(FullPath);
+			if (file.isFile() && file.exists()) { // 判断文件是否存在
+				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
+				BufferedReader bufferedReader = new BufferedReader(read);
+				String lineTxt = null;
+				while ((lineTxt = bufferedReader.readLine()) != null) {// 按行读取
+					if (!"".equals(lineTxt)) {
+						String[] reds = lineTxt.split("\\s+");// 对行的内容进行分析处理后再放入map里。
+						//System.out.println("===>" + reds[0] + " : " + reds[1]);
+						String stock = reds[0];
+						// System.out.println(stock);
+						//int index = stock.length();
+						//String stockid = lineTxt.substring(index).trim();
+						String stockid = reds[1];
+						dic.add(stock);
+						filemaps.put(stock, stockid);// 放入map
+					}
 				}
+				read.close();// 关闭InputStreamReader
+				bufferedReader.close();// 关闭BufferedReader
+			} else {
+				System.out.println("==>cannot find file:" + FullPath);
 			}
-			read.close();//关闭InputStreamReader 
-			bufferedReader.close();//关闭BufferedReader 
-			} else 
-		{
-			System.out.println("cannot find file");
-		}
-		} catch (Exception e) 
-		{
+		} catch (Exception e) {
 			System.out.println("read error");
 			e.printStackTrace();
 		}
-			return filemaps;
-		}
+		return filemaps;
+	}
+
 	@Override
 	public List<String> correct(String query, List<String> segment) {
-	  Boolean isExist =false;
-	  List<String> dic = new ArrayList<String>();
-	  Map<String,String> filemaps=new HashMap<String,String>();
-	  getDic(dic,filemaps);
-	  // 最大距离要求为2
-	  int th = 2;
-	  int distance = th;
-	  String correct = "";
-	  for (int i = 0; i <dic.size(); i++) {
-		String stock = dic.get(i);
-		int dif = minDistance(query, stock);
-		if (dif < distance) {
-			if (dif == 0) {
-				segment.add(stock);
-				return segment;
+		Boolean isExist = false;
+		List<String> dic = new ArrayList<String>();
+		Map<String, String> filemaps = new HashMap<String, String>();
+		getDic(dic, filemaps);
+		// 最大距离要求为2
+		int th = 2;
+		int distance = th;
+		String correct = "";
+		for (int i = 0; i < dic.size(); i++) {
+			String stock = dic.get(i);
+			int dif = minDistance(query, stock);
+			if (dif < distance) {
+				if (dif == 0) {
+					segment.add(stock);
+					return segment;
+				}
+				// System.out.println(i);
+				correct = stock;
+				distance = dif;
 			}
-			//System.out.println(i);
-			correct = stock;
-			distance = dif;
 		}
-		}
-		if(distance<th)
-		{
-		 segment.add(correct);
-		 //System.out.println(filemaps.get(correct));
-		 segment.add(filemaps.get(correct));
-		 isExist=true;
-		}
-		else
-		{
+		if (distance < th) {
+			segment.add(correct);
+			System.out.println("+++++++" + filemaps.get(correct));
+			segment.add(filemaps.get(correct));
+			isExist = true;
+		} else {
 			String id = null;
-			for(String s:segment)
-			{
-				if(filemaps.get(s)!=null)
-				{
-					//System.out.println(filemaps.get(s));
+			for (String s : segment) {
+				if (filemaps.get(s) != null) {
+					System.out.println("))))))))))))))))" + filemaps.get(s));
 					id = filemaps.get(s);
 					break;
 				}
 			}
 			segment.add(id);
 		}
-		//System.out.println(isExist);
-		//if(!isExist)segment.add(null);
+		// System.out.println(isExist);
+		// if(!isExist)segment.add(null);
 		return segment;
 	}
 
