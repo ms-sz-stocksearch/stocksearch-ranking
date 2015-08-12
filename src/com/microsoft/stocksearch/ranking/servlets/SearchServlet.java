@@ -16,7 +16,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.microsoft.stocksearch.ranking.beans.QueryResult;
+import com.microsoft.stocksearch.ranking.service.CorrectService;
+import com.microsoft.stocksearch.ranking.service.RankService;
 import com.microsoft.stocksearch.ranking.service.SegmentService;
+import com.microsoft.stocksearch.ranking.service.impl.CorrectServiceImpl;
+import com.microsoft.stocksearch.ranking.service.impl.RankServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
 
 import net.sf.json.JSONArray;
@@ -29,7 +34,10 @@ public class SearchServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static List<String> dictionary = null;
-	private SegmentService ss = null; 
+	private SegmentService ss = null;
+	
+	private static CorrectService correctService = null;
+	private static RankService rankservice = null;
 	
        
     /**
@@ -67,6 +75,11 @@ public class SearchServlet extends HttpServlet {
 		}
 		ss = new SegmentServiceImpl();
 		ss.initDictionary(dictionary);
+		
+		//correctService = new CorrectServiceImpl();
+		
+		//rankservice = new RankServiceImpl();
+		
     }
 
 	/**
@@ -98,11 +111,26 @@ public class SearchServlet extends HttpServlet {
 			initService();
 		}
 		
+		if(correctService == null) {
+			correctService = new CorrectServiceImpl();
+		}
+		
+		if(rankservice == null) {
+			rankservice = new RankServiceImpl();
+		}
+		
 		List<String> segments = ss.segment(queryString);
 		
+		segments = correctService.correct(queryString, segments);
 		
+		String stockId = segments.get(segments.size()-1);
 		
-		response.getWriter().append("<br/>");
+		segments.remove(segments.size()-1);
+		
+		List<QueryResult> queryResult = rankservice.sort(segments);
+		
+		//Set<String> ss = new HashSet<String>(segments);
+		//segments = new ArrayList(ss);
 		
 		res.put("status", 200);
 		res.put("msg", "ok");
@@ -118,9 +146,17 @@ public class SearchServlet extends HttpServlet {
 		
 		res.put("segments", segs);
 		
-		res.put("stock_code", "123");
+		res.put("stock_code", stockId);
 		
 		JSONArray result = new JSONArray();
+		
+		for (QueryResult qr : queryResult) {
+			JSONObject obj = new JSONObject();
+			obj.put("title", qr.getTitle());
+			obj.put("url", qr.getUrl());
+			obj.put("summary", qr.getSummary());
+			result.add(obj);
+		}
 		
 		res.put("result", result);
 		

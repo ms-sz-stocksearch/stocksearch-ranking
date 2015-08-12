@@ -1,4 +1,4 @@
-
+package com.microsoft.stocksearch.ranking.service.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,11 +7,14 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.microsoft.stocksearch.ranking.service.CorrectService;
+
 import java.util.HashMap;
 
 public class CorrectServiceImpl extends CorrectService{
 	public static Map<String,String> getDic(List<String> dic,Map<String,String> filemaps){
-		String FilePath="C:/Users/la9254/Desktop/";
+		String FilePath="C:\\Users\\v-junjzh\\ranking\\";
 		String FileName="stockid.txt";
 		String FullPath=FilePath+FileName;
 		try {
@@ -38,11 +41,11 @@ public class CorrectServiceImpl extends CorrectService{
 			bufferedReader.close();//关闭BufferedReader 
 			} else 
 		{
-			System.out.println("找不到指定的文件");
+			System.out.println("cannot find file");
 		}
 		} catch (Exception e) 
 		{
-			System.out.println("读取文件内容出错");
+			System.out.println("read error");
 			e.printStackTrace();
 		}
 			return filemaps;
@@ -74,20 +77,25 @@ public class CorrectServiceImpl extends CorrectService{
 		{
 		 segment.add(correct);
 		 //System.out.println(filemaps.get(correct));
+		 segment.add(filemaps.get(correct));
 		 isExist=true;
 		}
 		else
 		{
-		for(String s:segment)
-		{
-			if(filemaps.get(s)!=null)
+			String id = null;
+			for(String s:segment)
 			{
-				//System.out.println(filemaps.get(s));
-				isExist=true;
+				if(filemaps.get(s)!=null)
+				{
+					//System.out.println(filemaps.get(s));
+					id = filemaps.get(s);
+					break;
+				}
 			}
-		}
+			segment.add(id);
 		}
 		//System.out.println(isExist);
+		//if(!isExist)segment.add(null);
 		return segment;
 	}
 
