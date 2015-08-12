@@ -2,9 +2,7 @@ package com.microsoft.stocksearch.ranking.service.impl;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,28 +11,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.InitialContext;
-import javax.swing.LayoutStyle;
-
-import org.apache.catalina.ant.FindLeaksTask;
-
 import com.microsoft.stocksearch.ranking.beans.QueryResult;
-import com.microsoft.stocksearch.ranking.service.DataService;
 import com.microsoft.stocksearch.ranking.service.RankService;
-import com.sun.istack.internal.FinalArrayList;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
-
-import sun.misc.FloatingDecimal;
-import sun.text.resources.FormatData_es_AR;
+import com.microsoft.stocksearch.ranking.service.SummaryService;
 
 public class RankServiceImpl extends RankService {
 	
 	private final double TITLE = 7;
 	private final double CONTENT = 3;
 
-	private final String invertedTablePath = "C:\\Users\\v-junjzh\\ranking\\invertedindex.txt";
-	private final String wordToIdPath = "C:\\Users\\v-junjzh\\ranking\\word2id.txt";
-	private final String id2UrlPath = "C:\\Users\\v-junjzh\\ranking\\id2url.map";
+	//private final String invertedTablePath = "C:\\Users\\v-junjzh\\ranking\\invertedindex.txt";
+	//private final String wordToIdPath = "C:\\Users\\v-junjzh\\ranking\\word2id.txt";
+	//private final String id2UrlPath = "C:\\Users\\v-junjzh\\ranking\\id2url.map";
+	
+	private final String invertedTablePath = "/home/ubuntu/stocksearch/crawler/invertedindex.txt";
+	private final String wordToIdPath = "/home/ubuntu/stocksearch/crawler/word2id.txt";
+	private final String id2UrlPath = "/home/ubuntu/stocksearch/crawler/id2url.map";
+	
+	private SummaryService summary = null;
 	
 	public class Node{
 		int did;
@@ -123,25 +117,25 @@ public class RankServiceImpl extends RankService {
 		return ans;
 	}
 	public String getTitle(int id){
-		return "ss";
-		/*
 		String filePath = "/home/ubuntu/stocksearch/crawler/SpiderOut/" + id + ".title";
 		String title = null;
 		try {
-			BufferedReader cin = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
+			BufferedReader cin = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), "utf-8"));
 			title = cin.readLine();
 			cin.close();
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
 		return title;
-		*/
 	}
 	public String getUrl(int id){
 		return idToUrl.get(id);
 	}
 	public String getSummary(int id,List<String>keywords){
-		return "";
+		if(summary == null) {
+			summary = new SummaryServiceImpl();
+		}
+		return summary.getSummary(id, keywords);
 	}
 	
 	private List<QueryResult> test() {

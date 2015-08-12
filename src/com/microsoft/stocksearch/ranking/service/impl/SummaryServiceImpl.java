@@ -113,8 +113,8 @@ public class SummaryServiceImpl implements SummaryService {
 		int StartIndex=0;
 		int MaxScore=-1;
 		try { 
-		
-			HTMLContent=readFileContent("../../crawler/SpiderOut/"+Integer.toString(id)+".html");
+			String path = "/home/ubuntu/stocksearch/crawler/SpiderOut/";
+			HTMLContent=readFileContent(path + Integer.toString(id)+".html");
 			HTMLContent=htmlRemoveTag(HTMLContent);
 			for (int i=0;i<HTMLContent.length()-SummaryLength+1;i++)
 			{
