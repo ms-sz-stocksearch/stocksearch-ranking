@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.microsoft.stocksearch.ranking.service.CorrectService;
+import com.microsoft.stocksearch.ranking.servlets.SearchServlet;
 
 import java.util.HashMap;
 
@@ -44,7 +45,7 @@ public class CorrectServiceImpl extends CorrectService {
 			}
 		} catch (Exception e) {
 			System.out.println("read error");
-			e.printStackTrace();
+			e.printStackTrace(SearchServlet.ps);
 		}
 		return filemaps;
 	}

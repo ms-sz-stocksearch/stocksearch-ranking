@@ -4,9 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +29,8 @@ import com.microsoft.stocksearch.ranking.service.SegmentService;
 import com.microsoft.stocksearch.ranking.service.impl.CorrectServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.RankServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
+import com.microsoft.stocksearch.ranking.utils.CodeUtils;
+import com.microsoft.stocksearch.ranking.utils.ConfigUtil;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -46,6 +50,8 @@ public class SearchServlet extends HttpServlet {
 	private Map<String, String> stockmap;
 	private Set<String> stockids;
 	
+	public static PrintStream ps;
+	
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -55,13 +61,19 @@ public class SearchServlet extends HttpServlet {
     }
     
     private void initService() {
+    	
+    	try {
+    		ps = new PrintStream(new FileOutputStream(ConfigUtil.get("OutputFile")));
+    		System.setOut(ps);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		throw new RuntimeException(e.getMessage());
+    	}
+    	
     	dictionary = new ArrayList<String>();
 		try {
-			InputStream conf = getClass().getResourceAsStream("/dictionary.conf");
-			BufferedReader confrd = new BufferedReader(new InputStreamReader(conf, "utf-8"));
-			String dir = confrd.readLine();
-			confrd.close();
-			conf.close();
+			String dir = ConfigUtil.getDictionaryPath();
+			System.out.println("dir->" + dir);
 			File file = new File(dir);
 			InputStream in = new FileInputStream(file);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in, "utf-8"));
@@ -72,21 +84,12 @@ public class SearchServlet extends HttpServlet {
 			}
 			br.close();
 			in.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace(ps);
 		}
 		ss = new SegmentServiceImpl();
 		ss.initDictionary(dictionary);
-		
-		//correctService = new CorrectServiceImpl();
-		
-		//rankservice = new RankServiceImpl();
-		
+		System.out.println("load dictionary success. size: " + dictionary.size());
     }
 
 	/**
@@ -107,7 +110,7 @@ public class SearchServlet extends HttpServlet {
 		if (queryString == null) {
 			res.put("status", 300);
 			res.put("msg", "parameter s is null");
-			response.getWriter().append(res.toString());
+			response.getWriter().append(res.toString()).flush();
 			return ;
 		}
 		
@@ -136,6 +139,7 @@ public class SearchServlet extends HttpServlet {
 		
 		String stockId = null;
 		
+		System.out.println("segments size: " + segments.size());
 		for (String s : segments) {
 			if(stockmap.containsKey(s)) {
 				stockId = stockmap.get(s);
@@ -176,51 +180,39 @@ public class SearchServlet extends HttpServlet {
 		
 		for (QueryResult qr : queryResult) {
 			JSONObject obj = new JSONObject();
-			obj.put("title", qr.getTitle());
-			obj.put("url", qr.getUrl());
-			obj.put("summary", qr.getSummary());
+			String title = qr.getTitle();
+			if (title == null) {
+				title = "";
+			}
+			String url = qr.getUrl();
+			if (url == null) {
+				url = "";
+			}
+			String summary = qr.getSummary();
+			if (summary == null) {
+				summary = "";
+			}
+			obj.put("title", title);
+			obj.put("url", url);
+			obj.put("summary", summary);
 			result.add(obj);
 		}
 		
+		System.out.println("result");
 		res.put("result", result);
 		
-		response.getWriter().append(res.toString());
-		
-		
-		/*
-		CorrectService correct=new CorrectServiceImpl();
-		segments=correct.correct(queryString,segments);
-		
-		response.getWriter().append("<br/>Query string: " + queryString + "<br/>After correct:<br/>");
-		for (String word : segments) {
-			response.getWriter().append(word).append("<br/>");
-		}
-		
-		response.getWriter().append("<br/>");
-		
-		response.getWriter().append("Result :<br/>");
-		
-		
-		RankService rs = new RankServiceImpl();
-		List<QueryResult> qr = rs.sort(segments);
-		
-		for (QueryResult q : qr) {
-			response.getWriter().append("<a href=\"" + q.getUrl() + "\">" + q.getTitle() + "</P>");
-		}
-		
-		*/
+		response.getWriter().append(res.toString()).flush();
+		response.getWriter().close();
 		
 	}
 
 	private void initStockMap() {
 		stockmap = new HashMap();
 		stockids = new HashSet();
-		String FilePath = "C:\\Users\\v-junjzh\\ranking\\";
-		//String FilePath = "/home/ubuntu/stocksearch/ranking/ranking/";
-		String FileName = "stockid.txt";
-		String FullPath = FilePath + FileName;
+		String FullPath = ConfigUtil.getStockMap();
 		try {
-			String encoding = "UTF-8";
+			String encoding = CodeUtils.getFileEncode(FullPath);
+			System.out.println("-->stock map encode: " + encoding);
 			File file = new File(FullPath);
 			if (file.isFile() && file.exists()) { // 判断文件是否存在
 				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
@@ -229,11 +221,7 @@ public class SearchServlet extends HttpServlet {
 				while ((lineTxt = bufferedReader.readLine()) != null) {// 按行读取
 					if (!"".equals(lineTxt)) {
 						String[] reds = lineTxt.split("\\s+");// 对行的内容进行分析处理后再放入map里。
-						//System.out.println("===>" + reds[0] + " : " + reds[1]);
 						String stock = reds[0];
-						// System.out.println(stock);
-						//int index = stock.length();
-						//String stockid = lineTxt.substring(index).trim();
 						String stockid = reds[1];
 						stockids.add(stockid);
 						stockmap.put(stock, stockid);// 放入map
@@ -246,7 +234,7 @@ public class SearchServlet extends HttpServlet {
 			}
 		} catch (Exception e) {
 			System.out.println("read error");
-			e.printStackTrace();
+			e.printStackTrace(ps);
 		}
 	}
 

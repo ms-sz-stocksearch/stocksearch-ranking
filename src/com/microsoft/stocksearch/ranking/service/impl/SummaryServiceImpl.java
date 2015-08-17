@@ -14,10 +14,14 @@ import java.util.regex.Pattern;
 
 
 import com.microsoft.stocksearch.ranking.service.SummaryService;
+import com.microsoft.stocksearch.ranking.servlets.SearchServlet;
+import com.microsoft.stocksearch.ranking.utils.ConfigUtil;
 
 public class SummaryServiceImpl implements SummaryService {
 	String HTMLContent;
 	static final int SummaryLength=80;
+	
+	private static final String PAGE_FILE_PATH = ConfigUtil.get("PageFilePath");
 	
 	private String readFileContent(String fileName) throws IOException 
 	{
@@ -75,15 +79,11 @@ public class SummaryServiceImpl implements SummaryService {
 			htmlStr = m_html.replaceAll(""); // 过滤html标签
 			textStr = htmlStr;
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace(SearchServlet.ps);
 		}
 		return textStr;// 返回文本字符串
 	}
 	public static String resolveCode(String path)  {  
-//      String filePath = "D:/article.txt"; //[-76, -85, -71]  ANSI  
-//      String filePath = "D:/article111.txt";  //[-2, -1, 79] unicode big endian  
-//      String filePath = "D:/article222.txt";  //[-1, -2, 32]  unicode  
-//      String filePath = "D:/article333.txt";  //[-17, -69, -65] UTF-8  
 		try
 		{
 	        InputStream inputStream = new FileInputStream(path);    
@@ -107,13 +107,13 @@ public class SummaryServiceImpl implements SummaryService {
 		}
 		return "";
 		
-    }  
+    }
 	public String getSummary(int id,List<String> keywords)
 	{
 		int StartIndex=0;
 		int MaxScore=-1;
 		try { 
-			String path = "/home/ubuntu/stocksearch/crawler/SpiderOut/";
+			String path = PAGE_FILE_PATH;
 			HTMLContent=readFileContent(path + Integer.toString(id)+".html");
 			HTMLContent=htmlRemoveTag(HTMLContent);
 			for (int i=0;i<HTMLContent.length()-SummaryLength+1;i++)
@@ -136,7 +136,7 @@ public class SummaryServiceImpl implements SummaryService {
 			return HTMLContent.substring(StartIndex, StartIndex+SummaryLength);
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace(SearchServlet.ps);
 		}
 		return "";
 	}
