@@ -146,7 +146,7 @@ public class SearchServlet extends HttpServlet {
 			}
 		}
 		
-		segments.remove(segments.size()-1);
+		//segments.remove(segments.size()-1);
 		
 		System.out.println("==+==+");
 		List<QueryResult> queryResult = rankservice.sort(segments);

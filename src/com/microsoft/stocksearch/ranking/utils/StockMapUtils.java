@@ -21,7 +21,8 @@ public class StockMapUtils {
 		stockids = new HashSet();
 		String FullPath = ConfigUtil.getStockMap();
 		try {
-			String encoding = CodeUtils.getFileEncode(FullPath);
+			//String encoding = CodeUtils.getFileEncode(FullPath);
+			String encoding = "utf-8";
 			System.out.println("-->stock map encode: " + encoding);
 			File file = new File(FullPath);
 			if (file.isFile() && file.exists()) { // 判断文件是否存在

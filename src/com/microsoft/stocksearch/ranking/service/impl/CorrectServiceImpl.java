@@ -1,20 +1,14 @@
 package com.microsoft.stocksearch.ranking.service.impl;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.microsoft.stocksearch.ranking.service.CorrectService;
-import com.microsoft.stocksearch.ranking.servlets.SearchServlet;
-
-import java.util.HashMap;
+import com.microsoft.stocksearch.ranking.utils.StockMapUtils;
 
 public class CorrectServiceImpl extends CorrectService {
-	public static Map<String, String> getDic(List<String> dic, Map<String, String> filemaps) {
+	/*public static Map<String, String> getDic(List<String> dic, Map<String, String> filemaps) {
 		String FilePath = "C:\\Users\\v-junjzh\\ranking\\";
 		String FileName = "stockid.txt";
 		String FullPath = FilePath + FileName;
@@ -49,23 +43,21 @@ public class CorrectServiceImpl extends CorrectService {
 		}
 		return filemaps;
 	}
-
+	 */
 	@Override
 	public List<String> correct(String query, List<String> segment) {
 		Boolean isExist = false;
-		List<String> dic = new ArrayList<String>();
-		Map<String, String> filemaps = new HashMap<String, String>();
-		getDic(dic, filemaps);
+		//getDic(dic, filemaps);
 		// 最大距离要求为2
 		int th = 2;
 		int distance = th;
 		String correct = "";
-		for (int i = 0; i < dic.size(); i++) {
-			String stock = dic.get(i);
+		Set<String> stockset = StockMapUtils.getStockMap().keySet();
+		for (String stock : stockset) {
 			int dif = minDistance(query, stock);
 			if (dif < distance) {
 				if (dif == 0) {
-					segment.add(stock);
+					//segment.add(stock);
 					return segment;
 				}
 				// System.out.println(i);
@@ -75,20 +67,10 @@ public class CorrectServiceImpl extends CorrectService {
 		}
 		if (distance < th) {
 			segment.add(correct);
-			System.out.println("+++++++" + filemaps.get(correct));
-			segment.add(filemaps.get(correct));
+			System.out.println("+++++++" + StockMapUtils.getStockMap().get(correct));
+			//segment.add(StockMapUtils.getStockMap().get(correct));
 			isExist = true;
-		} else {
-			String id = null;
-			for (String s : segment) {
-				if (filemaps.get(s) != null) {
-					System.out.println("))))))))))))))))" + filemaps.get(s));
-					id = filemaps.get(s);
-					break;
-				}
-			}
-			segment.add(id);
-		}
+		} 
 		// System.out.println(isExist);
 		// if(!isExist)segment.add(null);
 		return segment;
