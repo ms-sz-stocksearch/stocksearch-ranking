@@ -31,6 +31,7 @@ import com.microsoft.stocksearch.ranking.service.impl.RankServiceImpl;
 import com.microsoft.stocksearch.ranking.service.impl.SegmentServiceImpl;
 import com.microsoft.stocksearch.ranking.utils.CodeUtils;
 import com.microsoft.stocksearch.ranking.utils.ConfigUtil;
+import com.microsoft.stocksearch.ranking.utils.StockMapUtils;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -47,8 +48,6 @@ public class SearchServlet extends HttpServlet {
 	private static CorrectService correctService = null;
 	private static RankService rankservice = null;
 	
-	private Map<String, String> stockmap;
-	private Set<String> stockids;
 	
 	public static PrintStream ps;
 	
@@ -133,19 +132,16 @@ public class SearchServlet extends HttpServlet {
 		
 		segments = correctService.correct(queryString, segments);
 		
-		if (stockmap == null) {
-			initStockMap();
-		}
 		
 		String stockId = null;
 		
 		System.out.println("segments size: " + segments.size());
 		for (String s : segments) {
-			if(stockmap.containsKey(s)) {
-				stockId = stockmap.get(s);
+			if(StockMapUtils.getStockMap().containsKey(s)) {
+				stockId = StockMapUtils.getStockMap().get(s);
 				break;
 			}
-			if(stockids.contains(s)) {
+			if(StockMapUtils.getStockIds().contains(s)) {
 				stockId = s;
 			}
 		}
@@ -206,37 +202,7 @@ public class SearchServlet extends HttpServlet {
 		
 	}
 
-	private void initStockMap() {
-		stockmap = new HashMap();
-		stockids = new HashSet();
-		String FullPath = ConfigUtil.getStockMap();
-		try {
-			String encoding = CodeUtils.getFileEncode(FullPath);
-			System.out.println("-->stock map encode: " + encoding);
-			File file = new File(FullPath);
-			if (file.isFile() && file.exists()) { // 判断文件是否存在
-				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
-				BufferedReader bufferedReader = new BufferedReader(read);
-				String lineTxt = null;
-				while ((lineTxt = bufferedReader.readLine()) != null) {// 按行读取
-					if (!"".equals(lineTxt)) {
-						String[] reds = lineTxt.split("\\s+");// 对行的内容进行分析处理后再放入map里。
-						String stock = reds[0];
-						String stockid = reds[1];
-						stockids.add(stockid);
-						stockmap.put(stock, stockid);// 放入map
-					}
-				}
-				read.close();// 关闭InputStreamReader
-				bufferedReader.close();// 关闭BufferedReader
-			} else {
-				System.out.println("cannot find file");
-			}
-		} catch (Exception e) {
-			System.out.println("read error");
-			e.printStackTrace(ps);
-		}
-	}
+	
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
