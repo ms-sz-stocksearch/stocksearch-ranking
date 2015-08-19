@@ -24,7 +24,8 @@ public class RankServiceImpl extends RankService {
 
 	private final double TITLE = 7;
 	private final double CONTENT = 3;
-
+	private final double STOCK = 1.5;
+	private final double NORMAL = 1.0;
 	// private final String invertedTablePath =
 	// "C:\\Users\\v-junjzh\\ranking\\invertedindex.txt";
 	// private final String wordToIdPath =
@@ -134,6 +135,13 @@ public class RankServiceImpl extends RankService {
 		return ans;
 	}
 
+	public static <T> Set<T> setUnion(Set<T> A, Set<T> B){
+		Set<T> ans = new HashSet<T>();
+		for(T x : A)ans.add(x);
+		for(T x : B)if(!ans.contains(x))ans.add(x);
+		return ans;
+	}
+
 	public String getTitle(int id) {
 		String filePath = PAGE_FILE_PATH + id + ".title";
 		String title = null;
@@ -184,12 +192,42 @@ public class RankServiceImpl extends RankService {
 		}
 		List<QueryResult> ans = new ArrayList<>();
 
+
 		Set<Integer> documentSet = new HashSet<>();
+
+		for(int move = 0; move <= keywords.size(); move++){
+			Set<Integer> documentSetTmp = new HashSet<>();
+			for (int i = 0; i < keywords.size(); i++) {
+				if(i == move)continue;
+				if (i == 0) { 
+					Integer iid = wordToIdTable.get(keywords.get(i));
+					if (iid == null) {
+						continue;
+					}
+					int id = iid;
+					List<Node> list = invertedTable.get(id);
+					for (Node node : list) {
+						documentSetTmp.add(node.getDid());
+					}
+				} else {
+					Set<Integer> now = new HashSet<>();
+					Integer iid = wordToIdTable.get(keywords.get(i));
+					if (iid == null) {
+						continue;
+					}
+					int id = iid;
+					List<Node> list = invertedTable.get(id);
+					for (Node node : list) {
+						now.add(node.getDid());
+					}
+					documentSetTmp = intersection(documentSetTmp, now);
+				}
+			}
+			documentSet = setUnion(documentSet,documentSetTmp);
+		}
+		/*
 		for (int i = 0; i < keywords.size(); i++) {
-			if (i == 0) {
-				System.out.println("in for +");
-				System.out.println("=====>++>>ss " + keywords.get(i).equals("东"));
-				System.out.println("in for -");
+			if (i == 0) { 
 				Integer iid = wordToIdTable.get(keywords.get(i));
 				if (iid == null) {
 					continue;
@@ -213,6 +251,7 @@ public class RankServiceImpl extends RankService {
 				documentSet = intersection(documentSet, now);
 			}
 		}
+		*/
 
 		int index = 0;
 		Pair[] ws = new Pair[documentSet.size()];
@@ -224,7 +263,7 @@ public class RankServiceImpl extends RankService {
 			qs.setUrl(getUrl(id));
 			qs.setSummary(getSummary(id, keywords));
 
-			int tc = 0;
+			double totWeight = 0;
 			for (String word : keywords) {
 				System.out.println("wordToIdTable is null ? : " + wordToIdTable.isEmpty());
 				System.out.println("word is null ? : " + word.isEmpty());
@@ -234,16 +273,24 @@ public class RankServiceImpl extends RankService {
 				}
 				int ix = iix;
 				List<Node> list = invertedTable.get(ix);
+				int wordNumber = 0;
 				for (Node node : list) {
 					if (node.getDid() == id) {
-						tc += node.getCnt();
+						wordNumber = node.getCnt();
 						break;
 					}
 				}
+				double wordWeight;
+				if(isStock(word))wordWeight = STOCK;
+				else wordWeight = NORMAL;
+
+				if(wordNumber == 0)wordWeight = -wordWeight;
+				else wordWeight = wordWeight * Math.sqrt(wordNumber * 1.0);
+				totWeight += wordWeight;
 			}
 
 			ws[index].qs = qs;
-			ws[index++].weight = TITLE * tc;
+			ws[index++].weight = totWeight;
 		}
 
 		Arrays.sort(ws);
