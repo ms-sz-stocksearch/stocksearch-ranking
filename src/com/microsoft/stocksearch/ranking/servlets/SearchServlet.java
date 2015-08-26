@@ -98,11 +98,24 @@ public class SearchServlet extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("content-type", "text/html;charset=UTF-8");
 		
-		
 		// TODO 
 		
 		
 		String queryString = request.getParameter("s");
+		
+		int page = 0;
+		int pageSize = 10;
+		
+		try {
+			String str = request.getParameter("page");
+			page = Integer.parseInt(str);
+			str = request.getParameter("page_size");
+			pageSize = Integer.parseInt(str);
+		} catch (Exception e) {
+			if (ps != null) {
+				e.printStackTrace(ps);
+			}
+		}
 		
 		JSONObject res = new JSONObject();
 		
@@ -127,11 +140,24 @@ public class SearchServlet extends HttpServlet {
 		if(rankservice == null) {
 			rankservice = new RankServiceImpl();
 		}
+		long startTime = System.currentTimeMillis();
 		
 		List<String> segments = ss.segment(queryString);
 		
+		long endTime = System.currentTimeMillis();
+		long cost = endTime - startTime;
+		
+		res.put("segment_cost", cost);
+		
+		startTime = System.currentTimeMillis();
+		
 		segments = correctService.correct(queryString, segments);
 		
+		endTime = System.currentTimeMillis();
+		
+		cost = endTime - startTime;
+		
+		res.put("correct_cost", cost);
 		
 		String stockId = null;
 		
@@ -146,11 +172,25 @@ public class SearchServlet extends HttpServlet {
 			}
 		}
 		
-		//segments.remove(segments.size()-1);
+		startTime = System.currentTimeMillis();
 		
-		System.out.println("==+==+");
 		List<QueryResult> queryResult = rankservice.sort(segments);
-		System.out.println("call end");
+		
+		endTime = System.currentTimeMillis();
+		cost = endTime - startTime;
+		res.put("ranking_cost", cost);
+		
+		res.put("count", queryResult.size());
+		
+		res.put("page", page);
+		res.put("page_size", pageSize);
+		
+		int index = page * pageSize;
+		if (index >= 0 && index < queryResult.size()) {
+			queryResult = queryResult.subList(index, Math.min(queryResult.size(), index + pageSize));
+		}
+		
+		
 		//List<QueryResult> queryResult = new ArrayList<QueryResult>();
 		
 		//Set<String> ss = new HashSet<String>(segments);
@@ -197,7 +237,8 @@ public class SearchServlet extends HttpServlet {
 		System.out.println("result");
 		res.put("result", result);
 		
-		response.getWriter().append(res.toString()).flush();
+		
+		response.getWriter().append(res.toString(1)).flush();
 		response.getWriter().close();
 		
 	}

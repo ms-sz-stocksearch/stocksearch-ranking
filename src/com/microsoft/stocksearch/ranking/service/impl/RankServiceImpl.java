@@ -17,6 +17,7 @@ import com.microsoft.stocksearch.ranking.service.SummaryService;
 import com.microsoft.stocksearch.ranking.servlets.SearchServlet;
 import com.microsoft.stocksearch.ranking.utils.CodeUtils;
 import com.microsoft.stocksearch.ranking.utils.ConfigUtil;
+import com.microsoft.stocksearch.ranking.utils.StockMapUtils;
 
 import sun.misc.CompoundEnumeration;
 
@@ -135,10 +136,13 @@ public class RankServiceImpl extends RankService {
 		return ans;
 	}
 
-	public static <T> Set<T> setUnion(Set<T> A, Set<T> B){
+	public static <T> Set<T> setUnion(Set<T> A, Set<T> B) {
 		Set<T> ans = new HashSet<T>();
-		for(T x : A)ans.add(x);
-		for(T x : B)if(!ans.contains(x))ans.add(x);
+		for (T x : A)
+			ans.add(x);
+		for (T x : B)
+			if (!ans.contains(x))
+				ans.add(x);
 		return ans;
 	}
 
@@ -148,8 +152,7 @@ public class RankServiceImpl extends RankService {
 		try {
 			String curEncode = CodeUtils.getFileEncode(filePath);
 			System.out.println("file " + filePath + " encode is " + curEncode);
-			BufferedReader cin = new BufferedReader(
-					new InputStreamReader(new FileInputStream(filePath), curEncode));
+			BufferedReader cin = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), curEncode));
 			title = cin.readLine();
 			title = new String(title.getBytes(curEncode), "urf-8");
 			cin.close();
@@ -192,14 +195,14 @@ public class RankServiceImpl extends RankService {
 		}
 		List<QueryResult> ans = new ArrayList<>();
 
-
 		Set<Integer> documentSet = new HashSet<>();
 
-		for(int move = 0; move <= keywords.size(); move++){
+		for (int move = 0; move <= keywords.size(); move++) {
 			Set<Integer> documentSetTmp = new HashSet<>();
 			for (int i = 0; i < keywords.size(); i++) {
-				if(i == move)continue;
-				if (i == 0) { 
+				if (i == move)
+					continue;
+				if (i == 0) {
 					Integer iid = wordToIdTable.get(keywords.get(i));
 					if (iid == null) {
 						continue;
@@ -223,35 +226,19 @@ public class RankServiceImpl extends RankService {
 					documentSetTmp = intersection(documentSetTmp, now);
 				}
 			}
-			documentSet = setUnion(documentSet,documentSetTmp);
+			documentSet = setUnion(documentSet, documentSetTmp);
 		}
 		/*
-		for (int i = 0; i < keywords.size(); i++) {
-			if (i == 0) { 
-				Integer iid = wordToIdTable.get(keywords.get(i));
-				if (iid == null) {
-					continue;
-				}
-				int id = iid;
-				List<Node> list = invertedTable.get(id);
-				for (Node node : list) {
-					documentSet.add(node.getDid());
-				}
-			} else {
-				Set<Integer> now = new HashSet<>();
-				Integer iid = wordToIdTable.get(keywords.get(i));
-				if (iid == null) {
-					continue;
-				}
-				int id = iid;
-				List<Node> list = invertedTable.get(id);
-				for (Node node : list) {
-					now.add(node.getDid());
-				}
-				documentSet = intersection(documentSet, now);
-			}
-		}
-		*/
+		 * for (int i = 0; i < keywords.size(); i++) { if (i == 0) { Integer iid
+		 * = wordToIdTable.get(keywords.get(i)); if (iid == null) { continue; }
+		 * int id = iid; List<Node> list = invertedTable.get(id); for (Node node
+		 * : list) { documentSet.add(node.getDid()); } } else { Set<Integer> now
+		 * = new HashSet<>(); Integer iid = wordToIdTable.get(keywords.get(i));
+		 * if (iid == null) { continue; } int id = iid; List<Node> list =
+		 * invertedTable.get(id); for (Node node : list) {
+		 * now.add(node.getDid()); } documentSet = intersection(documentSet,
+		 * now); } }
+		 */
 
 		int index = 0;
 		Pair[] ws = new Pair[documentSet.size()];
@@ -281,11 +268,15 @@ public class RankServiceImpl extends RankService {
 					}
 				}
 				double wordWeight;
-				if(isStock(word))wordWeight = STOCK;
-				else wordWeight = NORMAL;
+				if (StockMapUtils.getStockMap().containsKey(word))
+					wordWeight = STOCK;
+				else
+					wordWeight = NORMAL;
 
-				if(wordNumber == 0)wordWeight = -wordWeight;
-				else wordWeight = wordWeight * Math.sqrt(wordNumber * 1.0);
+				if (wordNumber == 0)
+					wordWeight = -wordWeight;
+				else
+					wordWeight = wordWeight * Math.sqrt(wordNumber * 1.0);
 				totWeight += wordWeight;
 			}
 

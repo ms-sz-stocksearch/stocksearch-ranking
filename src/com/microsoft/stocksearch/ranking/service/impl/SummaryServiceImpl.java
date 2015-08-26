@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 
 import com.microsoft.stocksearch.ranking.service.SummaryService;
 import com.microsoft.stocksearch.ranking.servlets.SearchServlet;
+import com.microsoft.stocksearch.ranking.utils.CodeUtils;
 import com.microsoft.stocksearch.ranking.utils.ConfigUtil;
 
 public class SummaryServiceImpl implements SummaryService {
@@ -84,29 +85,7 @@ public class SummaryServiceImpl implements SummaryService {
 		return textStr;// 返回文本字符串
 	}
 	public static String resolveCode(String path)  {  
-		try
-		{
-	        InputStream inputStream = new FileInputStream(path);    
-	        byte[] head = new byte[3];    
-	        inputStream.read(head);      
-	        String code = "gb2312";  //或GBK  
-	        if (head[0] == -1 && head[1] == -2 )    
-	            code = "UTF-16";    
-	        else if (head[0] == -2 && head[1] == -1 )    
-	            code = "Unicode";    
-	        else if(head[0]==-17 && head[1]==-69 && head[2] ==-65)    
-	            code = "UTF-8";    
-	            
-	        inputStream.close();  
-	          
-	        System.out.println("Source HTML Code: "+ code);   
-	        return code;  
-		}
-		catch (Exception e)
-		{
-		}
-		return "";
-		
+		return CodeUtils.getEncode(new File(path));
     }
 	public String getSummary(int id,List<String> keywords)
 	{
@@ -114,7 +93,7 @@ public class SummaryServiceImpl implements SummaryService {
 		int MaxScore=-1;
 		try { 
 			String path = PAGE_FILE_PATH;
-			HTMLContent=readFileContent(path + Integer.toString(id)+".html");
+			HTMLContent=readFileContent(path + Integer.toString(id)+".content");
 			HTMLContent=htmlRemoveTag(HTMLContent);
 			for (int i=0;i<HTMLContent.length()-SummaryLength+1;i++)
 			{
